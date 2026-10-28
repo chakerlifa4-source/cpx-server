@@ -1,7 +1,5 @@
 const express = require('express');
 const admin = require('firebase-admin');
-
-// سنقوم لاحقاً بربط مفتاح الأمان الخاص بفايربيس (Service Account)
 const serviceAccount = require('./serviceAccountKey.json');
 
 admin.initializeApp({
@@ -13,8 +11,8 @@ const app = express();
 
 app.get('/cpxPostback', async (req, res) => {
     try {
-        const userId = req.query.uid;       // معرف المستخدم المرسل من تطبيقك
-        const payout = req.query.amount;    // قيمة الأرباح
+        const userId = req.query.uid;
+        const payout = req.query.amount;
 
         if (!userId || !payout) {
             return res.status(400).send("Missing parameters: uid or amount");
@@ -27,7 +25,6 @@ app.get('/cpxPostback', async (req, res) => {
 
         const userRef = db.collection("users").doc(userId);
 
-        // تحديث الرصيد سحابياً بشكل آمن عبر Transaction
         await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) {
