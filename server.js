@@ -1,18 +1,23 @@
 const express = require('express');
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+
+// استدعاء ملف مفتاح الأمان السري
 const serviceAccount = require('./serviceAccountKey.json');
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+// تهيئة فايربيس بالطريقة المعيارية الحديثة
+initializeApp({
+  credential: cert(serviceAccount)
 });
 
-const db = admin.firestore();
+const db = getFirestore();
 const app = express();
+app.use(express.json());
 
 app.get('/cpxPostback', async (req, res) => {
     try {
-        const userId = req.query.uid;
-        const payout = req.query.amount;
+        const userId = req.query.uid;       // معرف المستخدم المرسل من تطبيقك
+        const payout = req.query.amount;    // قيمة الأرباح
 
         if (!userId || !payout) {
             return res.status(400).send("Missing parameters: uid or amount");
@@ -25,6 +30,7 @@ app.get('/cpxPostback', async (req, res) => {
 
         const userRef = db.collection("users").doc(userId);
 
+        // تحديث الرصيد سحابياً بشكل آمن عبر Transaction
         await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) {
